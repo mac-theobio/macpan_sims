@@ -21,7 +21,7 @@ Sources += $(wildcard *.R) Makefile
 ignore += cachestuff/
 
 cachestuff:
-	git clone https://github.com/wzmli/MacPan_cache.git $@
+	git clone https://github.com/wzmli/macpan_sim_cache.git $@
 
 testify_funs.Rout: testify_funs.R
 	$(makeR)

@@ -1,11 +1,9 @@
 library(McMasterPandemic)
 library(tidyverse)
 library(parallel)
-callArgs <- "simulate_fit.Rout simulate_fit.R testify_funs.rda batchtools.rda"
-
-source("makestuff/makeRfuns.R")
-
-commandEnvironments()
+source("testify_funs.R")
+source("batchtools.R")
+# source("makestuff/makeRfuns.R")
 
 pp <- read_params("PHAC_testify.csv")
 pp <- fix_pars(pp,target=c(R0=1.3,Gbar=6))
@@ -39,15 +37,22 @@ timevars_increaseT <- data.frame(Date= dateVec
 ## Don't like these as global variables
 use_ode <- FALSE
 testing_time <- "report"
-stoch_obs <- FALSE
+stoch_obs <- TRUE
 keep_all <- FALSE
 
 # pp["obs_disp"] <- 5
 pp["mu"] <- 0.99
 
+simtable <- expand.grid(seed=1:10
+  , W_asymp = c(0.01, 0.1, 0.25, 0.5)
+)
+
 simcalib <- function(x){
 
-set.seed(x)
+seed <- simtable[x,"seed"]
+set.seed(seed)
+pp[["W_asymp"]] <- simtable[x,"W_asymp"]
+pp[["obs_disp"]] <- 5
 
 dd <- simtestify(pp, timevars_increaseT)
 
@@ -85,9 +90,9 @@ dat <- (dd %>% select(date, postest, death, H)
 						)
 	)
 	
-	ll <- list(fit=mod,data=dat,testing_data=testing_data)
-	saveRDS(ll,file=paste0("cachestuff/",x,".simcalib.RDS"))
+	ll <- list(fit=mod,data=dat,testing_data=testing_data,simpars = simtable[x,])
+	saveRDS(ll,file=paste0("cachestuff/simcalib.",x,".RDS"))
 }
 
-mclapply(x=1:12,FUN = simcalib(x),mc.cores = 4)
+mclapply(1:nrow(simtable),simcalib,mc.cores = 3)
 	

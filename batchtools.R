@@ -1,5 +1,5 @@
-source("makestuff/makeRfuns.R")
-commandEnvironments()
+# source("makestuff/makeRfuns.R")
+# commandEnvironments()
 
 get_workers <- function(workers) {
     if (is.null(workers)) {
@@ -77,4 +77,4 @@ batch_setup <- function(workers=NULL,walltime=6*60*60,ncpus=1,use_sge_stuff=FALS
 }
 
 
-saveEnvironment()
+# saveEnvironment()

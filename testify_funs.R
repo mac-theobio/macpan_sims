@@ -1,8 +1,8 @@
 library(McMasterPandemic)
 library(tidyverse)
 
-source("makestuff/makeRfuns.R")
-commandEnvironments()
+# source("makestuff/makeRfuns.R")
+# commandEnvironments()
 
 ##' @param p a set of parameters
 ##' @param testing_data a data frame with dates, per capita testing intensity per day
@@ -72,4 +72,4 @@ calibrate_sim <- function(dd, pars, p,timevars,debug_plot=FALSE,
 	return(mod)
 }
 
-saveVars(simtestify, calibrate_sim)
+# saveVars(simtestify, calibrate_sim)

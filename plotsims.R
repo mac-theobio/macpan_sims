@@ -46,4 +46,4 @@ gg <- (ggplot(ddcombo,aes(x=factor(seed)))
 )
 gg
 
-ggsave("testify_sim.png")
+# ggsave("testify_sim.png",height=6,width = 12)

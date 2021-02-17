@@ -7,6 +7,7 @@ source("batchtools.R")
 
 pp <- read_params("PHAC_testify.csv")
 pp <- fix_pars(pp,target=c(R0=1.3,Gbar=6))
+pp["omega"] <- 1
 
 start <- as.Date("2021-01-01")
 end <- as.Date("2022-01-01")
@@ -26,13 +27,19 @@ satfun <- function(S,F,h,m){
 }
 
 timevars_increaseT <- data.frame(Date= dateVec
-	, Symbol = rep("testing_intensity"), each=length(dateVec)
+	, Symbol = rep("testing_intensity", each=length(dateVec))
 	, Relative_value = satfun(S=1
 			, F=5
 			, h=length(dateVec)/2
 			, m=seq(0,length(dateVec)-1,by=1)
 	)
 )
+
+timevars_increaseT <- (timevars_increaseT 
+  %>% mutate(Relative_value = 1)                       
+)
+
+
 
 ## Don't like these as global variables
 use_ode <- FALSE
@@ -43,8 +50,8 @@ keep_all <- FALSE
 # pp["obs_disp"] <- 5
 pp["mu"] <- 0.99
 
-simtable <- expand.grid(seed=1:10
-  , W_asymp = c(0.01, 0.1, 0.25, 0.5)
+simtable <- expand.grid(seed=1:3
+  , W_asymp = c(0.1, 0.25, 0.5)
 )
 
 simcalib <- function(x){
@@ -52,13 +59,13 @@ simcalib <- function(x){
 seed <- simtable[x,"seed"]
 set.seed(seed)
 pp[["W_asymp"]] <- simtable[x,"W_asymp"]
-pp[["obs_disp"]] <- 5
+pp[["obs_disp"]] <- 1
 
 dd <- simtestify(pp, timevars_increaseT)
 
 dat <- (dd %>% select(date, postest, death, H)
 	%>% gather(key="var",value="value",-date)
-	%>% mutate(value=round(value))
+	# %>% filter(date >= as.Date("2020-01-05"))
 	)
 	opt_pars <- with(as.list(pp)
 						  , list(params=c(log_beta0 = log(beta0)
@@ -70,10 +77,11 @@ dat <- (dd %>% select(date, postest, death, H)
 	testing_data <- (timevars_increaseT
 						  %>% filter(Symbol == "testing_intensity")
 						  %>% transmute(Date, intensity = Relative_value*pp[["testing_intensity"]])
-						  # %>% filter(Date >= as.Date("2021-02-20"))
+						  # %>% filter(Date >= as.Date("2020-01-05"))
 	)
 	
-	sim_args <- list(ratemat_args = list(testing_time=testing_time))
+	sim_args <- list(ratemat_args = list(testing_time=testing_time)
+	             , step_args = list(testwt_scale = "sum_smooth"))
 	mod <- do.call(calibrate_comb
 						, c(nlist(params = pp
 									 , use_DEoptim = FALSE
@@ -94,5 +102,5 @@ dat <- (dd %>% select(date, postest, death, H)
 	saveRDS(ll,file=paste0("cachestuff/simcalib.",x,".RDS"))
 }
 
-mclapply(1:nrow(simtable),simcalib,mc.cores = 3)
+mclapply(1:nrow(simtable),simcalib,mc.cores = 4)
 	
